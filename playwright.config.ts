@@ -22,6 +22,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html'], ['json', { outputFile: 'playwright-report/results.json' }]],
+  snapshotPathTemplate: '{testDir}/{testFileName}-snapshots/{arg}{ext}',
   use: {
     baseURL: 'https://en.wikipedia.org',
     headless: !!process.env.CI,
