@@ -32,15 +32,33 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
+      - name: Generate snapshots if missing
+        id: snapshot-check
+        run: |
+          if [ ! -d "tests/ui/main.spec.ts-snapshots/theme-tests" ]; then
+            echo "Snapshots missing, generating..."
+            npx playwright test --update-snapshots
+            echo "generated=true" >> $GITHUB_OUTPUT
+          else
+            echo "Snapshots found, running tests normally"
+            echo "generated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit snapshots
+        if: steps.snapshot-check.outputs.generated == 'true' && github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add tests/ui/main.spec.ts-snapshots/
+          git commit -m "chore: add Playwright screenshot baselines [skip ci]" || echo "No changes to commit"
+          git push
+
       - name: Run Playwright tests
         id: test-step
         run: npx playwright test
         continue-on-error: true
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results.json
-          EMAIL: ${{ secrets.EMAIL }}
-          PASS: ${{ secrets.PASS }}
-          OTP: ${{ secrets.OTP }}
 
       - name: Save run metadata
         if: always()
@@ -50,6 +68,10 @@ jobs:
           
           # Copy Playwright HTML and JSON reports
           cp -r playwright-report/* "$RUN_DIR/" || true
+          
+          if [ -d "tests/ui/main.spec.ts-snapshots" ]; then
+            cp -r tests/ui/main.spec.ts-snapshots "$RUN_DIR/" || true
+          fi
           
           date '+%d-%m-%Y %I:%M%p' > "$RUN_DIR/timestamp.txt"
           if [ "${{ steps.test-step.outcome }}" == "success" ]; then
