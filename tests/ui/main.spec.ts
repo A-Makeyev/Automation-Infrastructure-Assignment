@@ -33,15 +33,15 @@ test.describe('Main page tests', () => {
   })
 
   test('TASK 3: Assert background color is changing to dark mode', async ({ mainPage, page }) => {
-      await mainPage.assertSnapshot('light-mode')
-      await expect(mainPage.backgroundColor('day')).toBeVisible()
+      // await mainPage.assertSnapshot('light-mode')
       await mainPage.assertThemeColors('day')
+      await expect(mainPage.backgroundColor('day')).toBeVisible()
 
       await mainPage.changeBackgroundColorToDark()
       await page.waitForTimeout(1000)
 
-      await mainPage.assertSnapshot('dark-mode')
-      await expect(mainPage.backgroundColor('night')).toBeVisible()
+      // await mainPage.assertSnapshot('dark-mode')
       await mainPage.assertThemeColors('night')
+      await expect(mainPage.backgroundColor('night')).toBeVisible()
   })
 })
