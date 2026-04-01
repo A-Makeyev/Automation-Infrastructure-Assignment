@@ -6,17 +6,21 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+
   reporter: [
     ['html'],
     ['json', { outputFile: 'playwright-report/results.json' }],
   ],
-  snapshotPathTemplate: '{testDir}/{testFileName}-snapshots/{arg}{ext}',
+
+  snapshotDir: './tests/snapshots',
+
   expect: {
     toHaveScreenshot: {
       animations: 'disabled',
       maxDiffPixelRatio: 0.05,
     },
   },
+
   use: {
     baseURL: 'https://en.wikipedia.org',
     trace: 'on-first-retry',
@@ -31,4 +35,4 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-});
+})
