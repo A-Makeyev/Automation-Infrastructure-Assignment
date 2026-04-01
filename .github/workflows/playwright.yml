@@ -16,61 +16,33 @@ jobs:
       id-token: write
 
     steps:
-      # ---------------------------
-      # Checkout source
-      # ---------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ---------------------------
-      # Node setup
-      # ---------------------------
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
-      # ---------------------------
-      # Install deps
-      # ---------------------------
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      # ---------------------------
-      # Install browsers
-      # ---------------------------
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - run: npx playwright install --with-deps
 
-      # ---------------------------
-      # Run tests
-      # ---------------------------
       - name: Run Playwright tests
         id: test-step
-        run: |
-          npx playwright test --reporter=html,json
+        run: npx playwright test --reporter=html,json
         continue-on-error: true
 
-      # ---------------------------
-      # Restore previous gh-pages history
-      # ---------------------------
-      - name: Checkout previous reports
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: old-reports
           fetch-depth: 0
         continue-on-error: true
 
-      # ---------------------------
-      # Merge history + new results
-      # ---------------------------
-      - name: Prepare results with history
+      - name: Prepare results
         if: always()
         run: |
           mkdir -p Results
 
-          echo "Restoring history..."
           if [ -d "old-reports" ]; then
             cp -r old-reports/Run-* Results/ 2>/dev/null || true
           fi
@@ -78,85 +50,46 @@ jobs:
           RUN_DIR="Results/Run-${{ github.run_number }}"
           mkdir -p "$RUN_DIR"
 
-          echo "Copying Playwright report..."
           cp -r playwright-report/* "$RUN_DIR/" || true
 
           date '+%d-%m-%Y %I:%M%p' > "$RUN_DIR/timestamp.txt"
 
           if [ "${{ steps.test-step.outcome }}" == "success" ]; then
-            echo "passed" > "$RUN_DIR/status.txt"
+            echo passed > "$RUN_DIR/status.txt"
           else
-            echo "failed" > "$RUN_DIR/status.txt"
+            echo failed > "$RUN_DIR/status.txt"
           fi
 
           echo "${{ github.run_number }}" > Results/latest.txt
 
           cd Results
 
-          echo "Keeping last 10 runs..."
           ls -d Run-* 2>/dev/null | sed 's/Run-//' | sort -n | head -n -10 | while read num; do
             rm -rf "Run-$num"
           done
 
-          # ---------------------------
-          # Build index.html
-          # ---------------------------
           cat > index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Playwright Reports</title>
-
-<style>
-body {
-  font-family: system-ui, sans-serif;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  padding:40px;
-  margin:0;
-}
-
-.container{
-  max-width:900px;
-  margin:auto;
-}
-
-h1{
-  color:white;
-}
-
-.report{
-  background:white;
-  border-radius:10px;
-  padding:18px;
-  margin:12px 0;
-  text-decoration:none;
-  display:flex;
-  justify-content:space-between;
-  color:#333;
-  box-shadow:0 4px 6px rgba(0,0,0,.1);
-}
-
-.badge{
-  padding:4px 10px;
-  border-radius:10px;
-  color:white;
-  font-size:.8em;
-}
-
-.pass{background:#10b981;}
-.fail{background:#ef4444;}
-</style>
-</head>
-<body>
-<div class="container">
-<h1>🧪 Playwright Test Reports</h1>
-<ul style="list-style:none;padding:0;">
-EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+          <title>Playwright Reports</title>
+          <style>
+          body{font-family:system-ui;background:linear-gradient(135deg,#667eea,#764ba2);padding:40px;margin:0}
+          .container{max-width:900px;margin:auto}
+          h1{color:white}
+          .report{background:white;border-radius:10px;padding:18px;margin:12px 0;text-decoration:none;display:flex;justify-content:space-between;color:#333}
+          .badge{padding:4px 10px;border-radius:10px;color:white;font-size:.8em}
+          .pass{background:#10b981}
+          .fail{background:#ef4444}
+          </style>
+          </head>
+          <body>
+          <div class="container">
+          <h1>🧪 Playwright Test Reports</h1>
+          <ul style="list-style:none;padding:0;">
+          EOF
 
           ls -d Run-* 2>/dev/null | sed 's/Run-//' | sort -rn | while read num; do
             dir="Run-$num"
@@ -175,28 +108,21 @@ EOF
             fi
 
             echo "<li>
-              <a class='report' href='$dir/index.html'>
-                <div>
-                  <strong>Run #$num</strong> $badge
-                  <div>$timestamp</div>
-                </div>
-                <div>→</div>
-              </a>
+            <a class='report' href='$dir/index.html'>
+            <div><strong>Run #$num</strong> $badge<div>$timestamp</div></div>
+            <div>→</div>
+            </a>
             </li>" >> index.html
           done
 
           cat >> index.html << 'EOF'
-</ul>
-</div>
-</body>
-</html>
-EOF
+          </ul>
+          </div>
+          </body>
+          </html>
+          EOF
 
-      # ---------------------------
-      # Deploy to GitHub Pages
-      # ---------------------------
-      - name: Deploy reports
-        uses: peaceiris/actions-gh-pages@v4
+      - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ github.token }}
           publish_dir: Results
