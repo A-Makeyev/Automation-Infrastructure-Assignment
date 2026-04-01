@@ -118,9 +118,6 @@ export class MainMainPlaywrightPage {
     }
 
     async assertSnapshot(name: string) {
-      await expect(this.page).toHaveScreenshot(name, { 
-        animations: 'disabled',
-        maxDiffPixelRatio: 0.05,
-      })
+        await expect(this.page).toHaveScreenshot(`theme-tests/${name}.png`)
     }
 }
