@@ -430,10 +430,7 @@ jobs:
                 }
               }
 
-              // Check every 30 seconds
               setInterval(checkForUpdates, 30000);
-              
-              // Initial check after 10 seconds
               setTimeout(checkForUpdates, 10000);
             </script>
           </body>
