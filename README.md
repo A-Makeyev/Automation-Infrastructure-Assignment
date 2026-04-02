@@ -1,8 +1,10 @@
-### Automation-Infrastructure-Assignment
-## [Demo results](https://a-makeyev.github.io/Automation-Infrastructure-Assignment)
+# Automation Infrastructure Assignment
 
-### Install
-## npm i
+## Demo Results
+[Demo results](https://a-makeyev.github.io/Automation-Infrastructure-Assignment)
 
-### Run test
-## npm test
+## Installation & 
+npm i
+
+## Run Tests
+npm test
